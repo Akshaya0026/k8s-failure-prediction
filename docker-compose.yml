@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  k8s-predictor:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - /app/venv # Ignore local venv inside container
+    environment:
+      - ENV=development
+    restart: always

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K8s AI Auto-Healing Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #a855f7;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --bg: #0b0f1a;
+            --card-bg: rgba(23, 23, 37, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text: #f8fafc;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at top right, #1e1b4b, #0f172a);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #22c55e;
+            animation: pulse 2s infinite;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        .prediction-form .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .main-stats {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 2rem;
+        }
+
+        .risk-gauge {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 1.5rem;
+        }
+
+        .gauge-container {
+            width: 250px;
+            position: relative;
+        }
+
+        .risk-info {
+            text-align: center;
+        }
+
+        .risk-value {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .risk-label {
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .root-cause-card {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 0.75rem;
+            display: none;
+        }
+
+        .recommendation-card {
+            margin-top: 1.5rem;
+            padding: 1.25rem;
+            background: rgba(99, 102, 241, 0.05);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 1rem;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .recommendation-card h4 {
+            color: var(--primary);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .root-cause-card h4 {
+            color: var(--danger);
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .history-list {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.875rem;
+        }
+
+        .tag {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .tag-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .tag-success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.5);
+                opacity: 0.4;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard">
+        <header>
+            <h1>AI Auto-Healing Control</h1>
+            <div style="display: flex; gap: 1rem;">
+                <div class="status-badge" id="restartBadge">Restarts: 0</div>
+                <div class="status-badge">Cluster Healthy</div>
+            </div>
+        </header>
+
+        <section class="card prediction-form">
+            <h3 style="margin-bottom: 1.5rem;">Resource Monitor</h3>
+            <form id="predictionForm">
+                <div class="form-group">
+                    <label>CPU Usage (%)</label>
+                    <input type="number" id="cpu_usage" step="0.1" value="50" required>
+                </div>
+                <div class="form-group">
+                    <label>Memory Usage (%)</label>
+                    <input type="number" id="memory_usage" step="0.1" value="60" required>
+                </div>
+                <div class="form-group">
+                    <label>Disk I/O</label>
+                    <input type="number" id="disk_io" step="0.1" value="30" required>
+                </div>
+                <div class="form-group">
+                    <label>Network I/O</label>
+                    <input type="number" id="network_io" step="0.1" value="20" required>
+                </div>
+                <button type="submit">Analyze Cluster Health</button>
+            </form>
+
+            <div style="margin-top: 2rem;">
+                <h4 style="color: #94a3b8; font-size: 0.75rem; margin-bottom: 1rem;">RECENT ACTIONS</h4>
+                <ul class="history-list" id="actionHistory">
+                    <li class="history-item">
+                        <span>Initialization</span>
+                        <span class="tag tag-success">Completed</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="main-stats">
+            <div class="card">
+                <div class="risk-gauge">
+                    <div class="gauge-container">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                    <div class="risk-info">
+                        <div class="risk-value" id="riskValue">0%</div>
+                        <div class="risk-label" id="riskLabel">Safe Operation</div>
+
+                        <div class="root-cause-card" id="rootCauseBox">
+                            <h4>🚨 Root Cause Detected</h4>
+                            <p id="rootCauseText" style="font-size: 0.875rem;"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <h3 style="margin-bottom: 1rem;">System Health Trend</h3>
+                <div style="height: 200px; width: 100%;">
+                    <canvas id="historyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Live Prediction Stream</h3>
+                <div id="resultMessage" style="margin-top: 1rem; color: #94a3b8; font-style: italic;">
+                    Enter parameters and run analysis to see results...
+                </div>
+                <div id="recommendationBox" class="recommendation-card" style="display: none;">
+                    <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path
+                                d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+                        </svg> AI ADVICE</h4>
+                    <p id="recommendationText" style="font-size: 0.875rem; line-height: 1.5;"></p>
+                </div>
+                <div id="healingActions" style="margin-top: 1rem;"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        let riskChart;
+        let historyChart;
+
+        function initCharts() {
+            const riskCtx = document.getElementById('riskChart').getContext('2d');
+            riskChart = new Chart(riskCtx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [0, 100],
+                        backgroundColor: ['#6366f1', 'rgba(255, 255, 255, 0.05)'],
+                        borderWidth: 0,
+                        circumference: 180,
+                        rotation: 270,
+                        cutout: '85%',
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                }
+            });
+
+            const historyCtx = document.getElementById('historyChart').getContext('2d');
+            historyChart = new Chart(historyCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Risk %',
+                        data: [],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
+                        x: { display: false }
+                    }
+                }
+            });
+        }
+
+        function updateUI(data) {
+            const risk = data.risk_percentage;
+            document.getElementById('riskValue').textContent = risk + '%';
+            document.getElementById('restartBadge').textContent = 'Restarts: ' + (data.restart_count || 0);
+
+            // Update chart
+            riskChart.data.datasets[0].data = [risk, 100 - risk];
+            let color = '#4ade80';
+            if (risk > 30) color = '#fbbf24';
+            if (risk > 40) color = '#ef4444';
+            riskChart.data.datasets[0].backgroundColor[0] = color;
+            riskChart.update();
+
+            // Root Cause
+            const rootBox = document.getElementById('rootCauseBox');
+            if (data.root_cause !== 'N/A') {
+                rootBox.style.display = 'block';
+                document.getElementById('rootCauseText').textContent = 'Anomalous ' + data.root_cause.replace('_', ' ').toUpperCase() + ' detected.';
+            } else {
+                rootBox.style.display = 'none';
+            }
+
+            // Labels
+            const label = document.getElementById('riskLabel');
+            if (risk < 30) {
+                label.textContent = "Safe Operation";
+                label.style.color = "#4ade80";
+            } else if (risk < 40) {
+                label.textContent = "Warning: Scaling Triggered";
+                label.style.color = "#fbbf24";
+            } else {
+                label.textContent = "Critical: Auto-Healing Active";
+                label.style.color = "#ef4444";
+            }
+
+            // Recommendations
+            const recBox = document.getElementById('recommendationBox');
+            if (data.recommendation) {
+                recBox.style.display = 'block';
+                document.getElementById('recommendationText').textContent = data.recommendation;
+            }
+
+            // Update History Chart
+            fetchHistory();
+
+            // History List
+            const history = document.getElementById('actionHistory');
+
+            if (data.healing_verified) {
+                const verifyItem = document.createElement('li');
+                verifyItem.className = 'history-item';
+                verifyItem.innerHTML = `<span style="color: var(--success)">✓ Restart Verified</span><span class="tag tag-success">Confirmed</span>`;
+                history.prepend(verifyItem);
+            }
+
+            const item = document.createElement('li');
+            item.className = 'history-item';
+            const action = risk >= 40 ? 'Restart Pod' : (risk >= 30 ? 'Scale HPA' : 'Observation');
+            const state = risk >= 30 ? 'Triggered' : 'Normal';
+            item.innerHTML = `<span>${action}</span><span class="tag ${risk >= 30 ? 'tag-danger' : 'tag-success'}">${state}</span>`;
+            history.prepend(item);
+        }
+
+        async function fetchHistory() {
+            try {
+                const response = await fetch('/history/');
+                const data = await response.json();
+                historyChart.data.labels = data.map(h => h.timestamp);
+                historyChart.data.datasets[0].data = data.map(h => h.risk);
+                historyChart.update('none');
+            } catch (e) { console.error('History fetch error', e); }
+        }
+
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.textContent = 'Analyzing...';
+            btn.style.opacity = '0.7';
+
+            const requestData = {
+                cpu_usage: parseFloat(document.getElementById('cpu_usage').value),
+                memory_usage: parseFloat(document.getElementById('memory_usage').value),
+                disk_io: parseFloat(document.getElementById('disk_io').value),
+                network_io: parseFloat(document.getElementById('network_io').value)
+            };
+
+            try {
+                const response = await fetch('/predict/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+
+                const data = await response.json();
+                updateUI(data);
+                document.getElementById('resultMessage').textContent = `Analysis complete: ${data.is_failure ? 'Potential failure detected!' : 'System stable.'}`;
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('resultMessage').textContent = "Error occurred during prediction.";
+            } finally {
+                btn.textContent = 'Analyze Cluster Health';
+                btn.style.opacity = '1';
+            }
+        });
+
+        initCharts();
+        fetchHistory();
+    </script>
+</body>
+
+</html>

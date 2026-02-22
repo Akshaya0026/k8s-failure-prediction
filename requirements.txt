@@ -1,0 +1,11 @@
+fastapi
+joblib
+matplotlib
+numpy
+pandas
+scikit-learn
+seaborn
+uvicorn
+kubernetes
+prometheus-client
+requests
