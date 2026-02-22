@@ -1,8 +1,8 @@
-<<<<<<< HEAD
+
 # PREDICTIVE AUTO-HEALING SYSTEM 🚀
 ### Industry-Level AI Sentinel for Kubernetes Clusters
 
-This project predicts Kubernetes failures based on real-time resource usage metrics using *Machine Learning (Isolation Forest/Random Forest)*. It features a premium, self-healing dashboard that not only predicts failures but also takes automated action to stabilize the cluster.
+This project predicts Kubernetes failures based on real-time resource usage metrics using *Machine Learning (Random Forest)*. It features a premium, self-healing dashboard that not only predicts failures but also takes automated action to stabilize the cluster.
 
 ---
 
@@ -95,7 +95,7 @@ AI model for predicting failures in kubernetes clusters
 
  Overview
 This project predicts Kubernetes failures based on real-time resource usage metrics.  
-It uses *Machine Learning (Isolation Forest)* and provides predictions via a *FastAPI REST API*.
+It uses *Machine Learning * and provides predictions via a *FastAPI REST API*.
 
  📂 Project Structure
  k8s-failure-prediction/ 📁 src/ # Source code (FastAPI, ML model) 📁 models/ # Trained model (model.pkl) 📁 data/ # Dataset (k8s_metrics.csv) 📁 docs/ # Documentation (API guide, setup) 📁 presentation/ # Slides  📄 requirements.txt # Dependencies 📄 README.md # Project Overview
@@ -119,5 +119,6 @@ python src/k8s_failure_prediction.py
 Step 5: Test the API
 Open: http://127.0.0.1:8000/docs
 
+
 Test the /predict/ endpoint.
->>>>>>> a292a4cf2cc5dec749813ddd70a49d90d04fde3e
+
