@@ -68,10 +68,9 @@ uvicorn src.api:app --reload --port 8000
 
 ---
 
-## 📸 UI Gallery
-| Initial State (Healthy) | Analysis & Recommendation | Auto-Healing Active |
+| Safe Operation (Healthy) | Warning: Scaling Triggered | Critical: Auto-Healing |
 | :---: | :---: | :---: |
-| ![Healthy Dashboard](./screenshots/healthy_state.png) | ![Analysis Results](./screenshots/analysis_recommendation.png) | ![Critical State](./screenshots/critical_healing.png) |
+| ![Safe State](./screenshots/risk_safe.png) | ![Warning State](./screenshots/risk_warning.png) | ![Critical State](./screenshots/risk_critical.png) |
 
 | Health Trend Tracking | Auto-Pilot Monitor | Action History |
 | :---: | :---: | :---: |
