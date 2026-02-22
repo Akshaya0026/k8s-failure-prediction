@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-predictor
+  labels:
+    app: k8s-predictor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-predictor
+  template:
+    metadata:
+      labels:
+        app: k8s-predictor
+    spec:
+      containers:
+      - name: predictor
+        image: your-docker-username/k8s-predictor:latest
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+        env:
+        - name: ENV
+          value: "production"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-predictor-service
+spec:
+  selector:
+    app: k8s-predictor
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: LoadBalancer
