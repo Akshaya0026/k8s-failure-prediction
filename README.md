@@ -23,6 +23,11 @@ The recording below demonstrates the full system lifecycle: Manual resource moni
 
 ![Project Demo](./screenshots/project_demo.webp)
 
+### 🤖 Auto-Pilot Demo
+See the system autonomously fetching metrics and running predictions in the background.
+
+![Auto-Pilot Demo](./screenshots/auto_pilot_demo.webp)
+
 ---
 
 ## 📂 Project Structure
