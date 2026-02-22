@@ -1,8 +1,7 @@
+# K8S-FAILURE-PREDICTION 🚀
+### Industry-Level AI Auto-Healing System for Kubernetes Clusters
 
-# PREDICTIVE AUTO-HEALING SYSTEM 🚀
-### Industry-Level AI Sentinel for Kubernetes Clusters
-
-This project predicts Kubernetes failures based on real-time resource usage metrics using *Machine Learning (Random Forest)*. It features a premium, self-healing dashboard that not only predicts failures but also takes automated action to stabilize the cluster.
+This project predicts Kubernetes failures based on real-time resource usage metrics using *Machine Learning (Isolation Forest/Random Forest)*. It features a premium, self-healing dashboard that not only predicts failures but also takes automated action to stabilize the cluster.
 
 ---
 
@@ -14,6 +13,7 @@ This project predicts Kubernetes failures based on real-time resource usage metr
 - **💡 Smart Recommendation Engine**: Provides human-readable advice based on resource usage patterns (CPU load, memory pressure, etc.).
 - **📈 Health History Chart**: Visualizes system risk trends to spot cascading failure patterns early.
 - **🚨 Prometheus Integration**: Exports metrics for comprehensive observability and alerting.
+- **🤖 Auto-Pilot Mode**: Zero-touch background monitoring and automatic health analysis.
 
 ---
 
@@ -28,8 +28,9 @@ k8s-failure-prediction/
 │   └── 📁 static/        # Glassmorphic Dashboard (HTML/JS)
 ├── 📁 models/             # Trained model (model.pkl)
 ├── 📁 data/               # Training Datasets
-├── 📁 docs/               # Detailed Documentation
+├── 📁 k8s/                # Kubernetes Deployment Manifests
 ├── requirements.txt      # Dependencies
+├── DEPLOYMENT.md         # Detailed Deployment Guide
 └── README.md             # Project Overview
 ```
 
@@ -42,7 +43,7 @@ k8s-failure-prediction/
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/k8s-failure-prediction.git
+git clone https://github.com/Akshaya0026/k8s-failure-prediction.git
 cd k8s-failure-prediction
 ```
 
@@ -56,9 +57,8 @@ pip install -r requirements.txt
 
 ### Step 3: Run the System
 ```bash
-python src/main.py
-# Or directly with Uvicorn
-uvicorn src.api:app --reload
+# Set up a local development server
+uvicorn src.api:app --reload --port 8000
 ```
 
 ---
@@ -66,10 +66,11 @@ uvicorn src.api:app --reload
 ## 🖥️ Enhanced AI Dashboard
 
 The new dashboard provides a unified view of cluster health:
-1. **Resource Monitor**: Manual or live input for system parameters.
-2. **Risk Gauge**: Real-time AI risk assessment (Safe, Warning, Critical).
-3. **Health Trend**: Historical tracking of risk levels.
-4. **AI ADVICE**: Contextual recommendations for cluster optimization.
+1. **Auto-Pilot Mode**: Background monitoring with live UI updates.
+2. **Resource Monitor**: Real-time visualization of system parameters.
+3. **Risk Gauge**: AI-driven risk assessment (Safe, Warning, Critical).
+4. **Health Trend**: Historical tracking of risk levels via live charts.
+5. **AI ADVICE**: Contextual recommendations for cluster optimization.
 
 ---
 
@@ -80,10 +81,15 @@ Experience the full auto-healing flow from failure detection to stabilization.
 
 ![Dashboard Demo](./screenshots/modern_dashboard_demo_1771754017568.webp)
 
+### 🤖 Auto-Pilot Demo
+See the system autonomously fetching metrics and running predictions in the background.
+
+![Auto-Pilot Demo](./screenshots/autopilot_verification_demobase_1771756052643.webp)
+
 ### UI Gallery
-| Initial State (Healthy) | Analysis & Recommendation |
-| :---: | :---: |
-| ![Healthy Dashboard](./screenshots/initial_dashboard_1771754027052.png) | ![Analysis Results](./screenshots/final_dashboard_analysis_1771754082170.png) |
+| Initial State (Healthy) | Analysis & Recommendation | Auto-Pilot Active |
+| :---: | :---: | :---: |
+| ![Healthy Dashboard](./screenshots/initial_dashboard_1771754027052.png) | ![Analysis Results](./screenshots/final_dashboard_analysis_1771754082170.png) | ![Auto-Pilot ON](./screenshots/dashboard_autopilot_on_1771756284930.png) |
 
 ---
 
@@ -91,37 +97,3 @@ Experience the full auto-healing flow from failure detection to stabilization.
 1. Open: `http://127.0.0.1:8000` to access the Dashboard.
 2. API Documentation: `http://127.0.0.1:8000/docs`
 3. Try the `/predict/` endpoint with high resource values to trigger auto-healing!
-=======
- k8s-failure-prediction
-AI model for predicting failures in kubernetes clusters
- Kubernetes Failure Prediction using Machine Learning
-
- Overview
-This project predicts Kubernetes failures based on real-time resource usage metrics.  
-It uses *Machine Learning * and provides predictions via a *FastAPI REST API*.
-
- 📂 Project Structure
- k8s-failure-prediction/ 📁 src/ # Source code (FastAPI, ML model) 📁 models/ # Trained model (model.pkl) 📁 data/ # Dataset (k8s_metrics.csv) 📁 docs/ # Documentation (API guide, setup) 📁 presentation/ # Slides  📄 requirements.txt # Dependencies 📄 README.md # Project Overview
-
-Installation & Setup
-Step 1: Clone the Repository
-git clone https://github.com/YOUR_USERNAME/k8s-failure-prediction.git
-cd k8s-failure-prediction 
-
-Step 2: Create a Virtual Environment
-python -m venv k8s-env
-k8s-env\Scripts\activate  # Windows
-source k8s-env/bin/activate  # Mac/Linux
-
-Step 3: Install Dependencies
-pip install -r requirements.txt
-
-Step 4: Run the FastAPI Server
-python src/k8s_failure_prediction.py
-
-Step 5: Test the API
-Open: http://127.0.0.1:8000/docs
-
-
-Test the /predict/ endpoint.
-
