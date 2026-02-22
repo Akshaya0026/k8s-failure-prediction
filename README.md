@@ -79,17 +79,17 @@ The new dashboard provides a unified view of cluster health:
 ### Video Walkthrough
 Experience the full auto-healing flow from failure detection to stabilization.
 
-![Dashboard Demo](./screenshots/modern_dashboard_demo_1771754017568.webp)
+![Dashboard Demo](./screenshots/ui_transformation.webp)
 
 ### 🤖 Auto-Pilot Demo
 See the system autonomously fetching metrics and running predictions in the background.
 
-![Auto-Pilot Demo](./screenshots/autopilot_verification_demobase_1771756052643.webp)
+![Auto-Pilot Demo](./screenshots/auto_pilot_demo.webp)
 
 ### UI Gallery
-| Initial State (Healthy) | Analysis & Recommendation | Auto-Pilot Active |
+| Initial State (Healthy) | Analysis & Recommendation | Auto-Healing Active |
 | :---: | :---: | :---: |
-| ![Healthy Dashboard](./screenshots/initial_dashboard_1771754027052.png) | ![Analysis Results](./screenshots/final_dashboard_analysis_1771754082170.png) | ![Auto-Pilot ON](./screenshots/dashboard_autopilot_on_1771756284930.png) |
+| ![Healthy Dashboard](./screenshots/initial_dashboard_1771754027052.png) | ![Analysis Results](./screenshots/final_dashboard_analysis_1771754082170.png) | ![Critical State](./screenshots/critical_healing.png) |
 
 ---
 
