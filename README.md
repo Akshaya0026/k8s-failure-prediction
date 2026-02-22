@@ -68,13 +68,9 @@ uvicorn src.api:app --reload --port 8000
 
 ---
 
-| Safe Operation (Healthy) | Warning: Scaling Triggered | Critical: Auto-Healing |
-| :---: | :---: | :---: |
-| ![Safe State](./screenshots/risk_safe.png) | ![Warning State](./screenshots/risk_warning.png) | ![Critical State](./screenshots/risk_critical.png) |
-
-| Health Trend Tracking | 
-| :---: | :---: | :---: |
-| ![Health Trend](./screenshots/health_trend_chart.png) | 
+ Safe Operation (Healthy) ![Safe State](./screenshots/risk_safe.png)  Warning: Scaling Triggered ![Warning State](./screenshots/risk_warning.png)  Critical: Auto-Healing![Critical State](./screenshots/risk_critical.png) 
+ Health Trend Tracking 
+![Health Trend](./screenshots/health_trend_chart.png) 
 
 ---
 
@@ -82,4 +78,5 @@ uvicorn src.api:app --reload --port 8000
 1. Open: `http://127.0.0.1:8000` to access the Dashboard.
 2. API Documentation: `http://127.0.0.1:8000/docs`
 3. Try the `/predict/` endpoint with high resource values to trigger auto-healing!
+
 
