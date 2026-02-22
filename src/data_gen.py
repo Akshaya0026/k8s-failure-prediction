@@ -32,3 +32,14 @@ def preprocess_data(df):
     """
     df = df.drop(columns=["timestamp"], errors='ignore')  # Drop timestamp for model simplicity
     return df
+
+def generate_live_metrics(base_cpu=45, base_mem=55):
+    """
+    Generates a single snapshot of realistic, fluctuating metrics.
+    """
+    return {
+        "cpu_usage": max(10, min(100, base_cpu + np.random.normal(0, 5))),
+        "memory_usage": max(10, min(100, base_mem + np.random.normal(0, 5))),
+        "disk_io": max(5, min(100, 30 + np.random.normal(0, 2))),
+        "network_io": max(5, min(100, 20 + np.random.normal(0, 2)))
+    }
