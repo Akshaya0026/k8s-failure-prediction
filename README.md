@@ -37,6 +37,9 @@ k8s-failure-prediction/
 
 ## 🛠️ Installation & Setup
 
+> [!TIP]
+> For detailed deployment options (Docker, Kubernetes, Cloud), please refer to the **[Deployment Guide](./DEPLOYMENT.md)**.
+
 ### Step 1: Clone the Repository
 ```bash
 git clone https://github.com/YOUR_USERNAME/k8s-failure-prediction.git
