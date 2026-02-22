@@ -1,8 +1,27 @@
+# Python
 venv/
+env/
+.venv/
 __pycache__/
 *.pyc
-.gemini/
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Data & Models (keep folders, ignore large files if desired, but here we keep models/)
+# !models/model.pkl  # Uncomment if you want to track the model
+
+# OS & IDE
 .DS_Store
-screenshots/*.webp
-screenshots/*.png
-!screenshots/README.md
+.vscode/
+.idea/
+.gemini/
+
+# Misc
+*.docx
+*.pptx
+*.pdf
+logs/
+*.log
