@@ -23,11 +23,6 @@ The recording below demonstrates the full system lifecycle: Manual resource moni
 
 ![Project Demo](./screenshots/project_demo.webp)
 
-### 🤖 Auto-Pilot Demo
-See the system autonomously fetching metrics and running predictions in the background.
-
-![Auto-Pilot Demo](./screenshots/auto_pilot_demo.webp)
-
 ---
 
 ## 📂 Project Structure
@@ -77,6 +72,10 @@ uvicorn src.api:app --reload --port 8000
 | Initial State (Healthy) | Analysis & Recommendation | Auto-Healing Active |
 | :---: | :---: | :---: |
 | ![Healthy Dashboard](./screenshots/healthy_state.png) | ![Analysis Results](./screenshots/analysis_recommendation.png) | ![Critical State](./screenshots/critical_healing.png) |
+
+| Health Trend Tracking | Auto-Pilot Monitor | Action History |
+| :---: | :---: | :---: |
+| ![Health Trend](./screenshots/health_trend_chart.png) | ![Autopilot ON](./screenshots/autopilot_monitor.png) | ![Action History](./screenshots/action_history.png) |
 
 ---
 
