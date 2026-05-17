@@ -5,15 +5,19 @@ This project predicts Kubernetes failures based on real-time resource usage metr
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features & Enhancements
 
-- **🧠 AI-Powered Prediction**: Detects anomalies and predicts potential pod failures with high accuracy.
-- **🛡️ Auto-Healing Logic**: Automated pod restarts and HPA scaling triggered by AI risk assessment.
-- **📊 Real-time Dashboard**: A premium, glassmorphic UI for monitoring cluster health and risk trends.
-- **💡 Smart Recommendation Engine**: Provides human-readable advice based on resource usage patterns.
+- **🧠 Robust AI Prediction**: Detects anomalies using an edge-case optimized Random Forest model trained on synthetic Kubernetes telemetry.
+- **🛡️ Auto-Healing Logic**: Automated pod restarts and HPA scaling executed via the Kubernetes Python API based on calculated AI risk.
+- **📊 Interactive Glassmorphic Dashboard**: A stunning UI featuring dynamic, color-shifting **Resource Sliders** for live metric simulations.
+- **🌐 Live Cluster Architecture Map**: An interactive 2D physics-based network graph (Vis.js) that visually reacts and turns nodes red during critical failures.
+- **💻 Real-Time DevOps Console**: A built-in terminal stream that types out live background logs and API commands for an authentic MLOps experience.
+- **🤖 Floating AI Chatbot**: An integrated smart assistant window to query cluster health status and model functionality.
+- **🌗 Multi-Theming**: Instant, smooth toggle between an enterprise Light Mode and a futuristic Dark Mode.
+- **💡 Smart Recommendation Engine**: Provides human-readable root-cause advice based on resource anomalies.
 - **📈 Health History Chart**: Visualizes system risk trends to spot cascading failure patterns early.
-- **🚨 Prometheus Integration**: Exports metrics for comprehensive observability and alerting.
-- **🤖 Auto-Pilot Mode**: Zero-touch background monitoring and automatic health analysis.
+- **🚨 Prometheus & ELK Integration**: Built for comprehensive observability, external logging, and webhooks (Slack/Discord).
+- **🚀 Auto-Pilot Mode**: Zero-touch background polling of Kubernetes metrics for automatic, human-free health analysis.
 
 ---
 
