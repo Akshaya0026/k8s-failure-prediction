@@ -21,11 +21,17 @@ This project predicts Kubernetes failures based on real-time resource usage metr
 
 ---
 
-## 🖼️ Project Demo
-### 🚀 Comprehensive Walkthrough
-The recording below demonstrates the full system lifecycle: Manual resource monitoring, AI-driven failure prediction, and the zero-touch **Auto-Pilot Mode** in action.
+## 🛠️ DevOps & Technology Stack
 
-![Project Demo](./screenshots/project_demo.webp)
+- **Frontend**: HTML5, Vanilla JS, CSS3, Chart.js, Vis.js (Network Visualization).
+- **Backend**: Python 3, FastAPI, Uvicorn (ASGI server).
+- **Machine Learning**: Scikit-Learn (RandomForestClassifier), NumPy, Joblib.
+- **Containerization**: Docker & Docker Compose.
+- **Orchestration & K8s**: Kubernetes Python Client for programmatic scaling and pod deletion.
+- **Infrastructure as Code (IaC)**: Terraform.
+- **Configuration Management**: Ansible.
+- **Observability**: Prometheus & Grafana (Monitoring), ELK Stack / Logstash (Centralized Logging).
+- **CI/CD**: GitHub Actions.
 
 ---
 
@@ -69,12 +75,6 @@ pip install -r requirements.txt
 ```bash
 uvicorn src.api:app --reload --port 8000
 ```
-
----
-
- Safe Operation (Healthy) ![Safe State](./screenshots/risk_safe.png)  Warning: Scaling Triggered ![Warning State](./screenshots/risk_warning.png)  Critical: Auto-Healing![Critical State](./screenshots/risk_critical.png) 
- Health Trend Tracking 
-![Health Trend](./screenshots/health_trend_chart.png) 
 
 ---
 
