@@ -20,12 +20,20 @@ prediction_history = []
 MAX_HISTORY = 10
 latest_autopilot_result = {"status": "initializing"}
 
+import logging
+from pythonjsonlogger import jsonlogger
+
+# Ensure logs directory exists
+os.makedirs("logs", exist_ok=True)
+
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+logHandler = logging.FileHandler("logs/api.log")
+formatter = jsonlogger.JsonFormatter('%(asctime)s %(name)s %(levelname)s %(message)s')
+logHandler.setFormatter(formatter)
+logger.addHandler(logHandler)
 
 app = FastAPI(title="Industry-Level K8s AI Auto-Healing System")
 

@@ -1,0 +1,62 @@
+---
+- name: Setup K8s Failure Prediction Environment
+  hosts: local
+  become: yes  # Require root privileges for installations
+  vars:
+    project_dir: "/opt/k8s-failure-prediction"
+    repo_url: "https://github.com/Akshaya0026/k8s-failure-prediction.git"
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install required system packages
+      package:
+        name:
+          - git
+          - python3
+          - python3-venv
+          - python3-pip
+          - curl
+        state: present
+
+    - name: Install Docker (if not installed)
+      shell: curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh
+      args:
+        creates: /usr/bin/docker
+
+    - name: Ensure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Clone the project repository
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ project_dir }}"
+        version: main
+        force: yes
+
+    - name: Ensure logs directory exists
+      file:
+        path: "{{ project_dir }}/logs"
+        state: directory
+        mode: '0755'
+
+    - name: Setup Python Virtual Environment
+      command: python3 -m venv {{ project_dir }}/venv
+      args:
+        creates: "{{ project_dir }}/venv/bin/activate"
+
+    - name: Install Python dependencies
+      pip:
+        requirements: "{{ project_dir }}/requirements.txt"
+        virtualenv: "{{ project_dir }}/venv"
+        
+    - name: Start the Docker Compose stack (including ELK and Prometheus)
+      command: docker compose up -d
+      args:
+        chdir: "{{ project_dir }}"

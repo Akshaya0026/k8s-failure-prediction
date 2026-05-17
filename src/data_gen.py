@@ -6,23 +6,36 @@ def generate_k8s_metrics(num_samples=1000):
     Generates synthetic Kubernetes metrics data.
     """
     np.random.seed(42)
+    
+    normal_samples = int(num_samples * 0.7)
+    fail_samples = num_samples - normal_samples
+    
+    # Normal data
+    cpu_n = np.random.normal(40, 15, normal_samples)
+    mem_n = np.random.normal(50, 15, normal_samples)
+    disk_n = np.random.normal(20, 10, normal_samples)
+    net_n = np.random.normal(15, 5, normal_samples)
+    status_n = np.zeros(normal_samples)
+    
+    # Failure data (high resource usage)
+    cpu_f = np.random.normal(90, 10, fail_samples)
+    mem_f = np.random.normal(90, 10, fail_samples)
+    disk_f = np.random.normal(80, 15, fail_samples)
+    net_f = np.random.normal(70, 20, fail_samples)
+    status_f = np.ones(fail_samples)
+    
     data = {
         "timestamp": pd.date_range(start="2024-01-01", periods=num_samples, freq="h"),
-        "cpu_usage": np.random.normal(50, 10, num_samples),
-        "memory_usage": np.random.normal(60, 15, num_samples),
-        "disk_io": np.random.normal(30, 5, num_samples),
-        "network_io": np.random.normal(20, 3, num_samples)
+        "cpu_usage": np.clip(np.concatenate([cpu_n, cpu_f]), 0, 100),
+        "memory_usage": np.clip(np.concatenate([mem_n, mem_f]), 0, 100),
+        "disk_io": np.clip(np.concatenate([disk_n, disk_f]), 0, 100),
+        "network_io": np.clip(np.concatenate([net_n, net_f]), 0, 100),
+        "pod_status": np.concatenate([status_n, status_f])
     }
     df = pd.DataFrame(data)
     
-    # Realistic failure correlation: High CPU or Memory increases risk
-    # Failure condition: CPU > 80 or Memory > 85 with some randomness
-    risk_score = (df["cpu_usage"] / 100) * 0.4 + (df["memory_usage"] / 100) * 0.4 + (df["disk_io"] / 100) * 0.2
-    df["pod_status"] = (risk_score > 0.7).astype(int)
-    
-    # Add some random failures (edge cases)
-    random_failures = np.random.choice([0, 1], num_samples, p=[0.98, 0.02])
-    df["pod_status"] = np.maximum(df["pod_status"], random_failures)
+    # Shuffle dataframe
+    df = df.sample(frac=1).reset_index(drop=True)
     
     return df
 

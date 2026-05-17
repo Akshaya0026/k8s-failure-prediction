@@ -9,3 +9,8 @@ uvicorn
 kubernetes
 prometheus-client
 requests
+pytest
+httpx
+python-json-logger
+selenium
+webdriver-manager

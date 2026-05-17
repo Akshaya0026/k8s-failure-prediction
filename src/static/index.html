@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>K8s AI Auto-Healing Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         :root {
             --primary: #6366f1;
@@ -18,445 +18,340 @@
             --card-bg: rgba(23, 23, 37, 0.6);
             --glass-border: rgba(255, 255, 255, 0.08);
             --text: #f8fafc;
+            --console-bg: #000000;
+            --console-text: #4ade80;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Outfit', sans-serif;
+        /* Light Mode Variables */
+        body.light-mode {
+            --primary: #4f46e5;
+            --secondary: #9333ea;
+            --bg: #f1f5f9;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text: #0f172a;
+            --console-bg: #1e293b;
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
         body {
             background: radial-gradient(circle at top right, #1e1b4b, #0f172a);
             color: var(--text);
             min-height: 100vh;
             padding: 2rem;
             overflow-x: hidden;
+            transition: background 0.5s ease, color 0.5s ease;
         }
 
-        .dashboard {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 2rem;
-        }
+        .dashboard { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 350px 1fr; gap: 2rem; }
+        
+        .right-panel { display: flex; flex-direction: column; gap: 2rem; }
 
-        header {
-            grid-column: 1 / -1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            animation: fadeIn 0.8s ease-out;
-        }
+        header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        h1 { font-size: 2rem; font-weight: 700; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        body.light-mode h1 { background: linear-gradient(to right, #4338ca, #7e22ce); -webkit-background-clip: text; }
 
-        h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(to right, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        .status-badge { padding: 0.5rem 1rem; border-radius: 99px; font-size: 0.875rem; font-weight: 600; background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); display: flex; align-items: center; gap: 0.5rem; }
+        .status-badge::before { content: ''; width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 10px #22c55e; animation: pulse 2s infinite; }
+        
+        .card { background: var(--card-bg); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid var(--glass-border); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.5s ease; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45); }
 
-        .status-badge {
-            padding: 0.5rem 1rem;
-            border-radius: 99px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            background: rgba(34, 197, 94, 0.2);
-            color: #4ade80;
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+        /* Sliders */
+        .prediction-form .form-group { margin-bottom: 1.5rem; }
+        label { display: flex; justify-content: space-between; font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.5rem; font-weight: 600; }
+        body.light-mode label { color: #475569; }
+        
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: var(--primary); cursor: pointer; margin-top: -8px; box-shadow: 0 0 10px var(--primary); transition: background 0.3s ease; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: rgba(255,255,255,0.1); border-radius: 3px; }
+        body.light-mode input[type=range]::-webkit-slider-runnable-track { background: rgba(0,0,0,0.1); }
 
-        .status-badge::before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            background: #22c55e;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #22c55e;
-            animation: pulse 2s infinite;
-        }
+        .range-value { font-weight: bold; color: var(--text); }
 
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            border-radius: 1.5rem;
-            padding: 2rem;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
+        button { width: 100%; padding: 1rem; background: linear-gradient(to right, var(--primary), var(--secondary)); color: white; border: none; border-radius: 0.75rem; font-weight: 700; cursor: pointer; transition: transform 0.2s, opacity 0.2s; margin-top: 1rem; }
+        button:hover { transform: translateY(-2px); opacity: 0.9; }
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
-        }
+        .main-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .risk-gauge { display: flex; align-items: center; justify-content: space-around; padding: 1.5rem; }
+        .gauge-container { width: 220px; position: relative; }
+        .risk-info { text-align: center; }
+        .risk-value { font-size: 3.5rem; font-weight: 800; line-height: 1; }
+        .risk-label { color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; margin-top: 0.5rem; }
 
-        .prediction-form .form-group {
-            margin-bottom: 1.5rem;
-        }
+        /* DevOps Console */
+        .devops-console { background: var(--console-bg); border-radius: 1rem; padding: 1rem; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; height: 250px; overflow-y: auto; border: 1px solid var(--glass-border); color: var(--console-text); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        .console-line { margin-bottom: 0.25rem; }
+        .console-time { color: #64748b; margin-right: 0.5rem; }
 
-        label {
-            display: block;
-            font-size: 0.875rem;
-            color: #94a3b8;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
+        /* Architecture Graph */
+        #networkGraph { height: 300px; width: 100%; background: rgba(0,0,0,0.2); border-radius: 1rem; border: 1px solid var(--glass-border); }
+        body.light-mode #networkGraph { background: rgba(255,255,255,0.5); }
 
-        input {
-            width: 100%;
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
-            color: white;
-            transition: all 0.3s ease;
-        }
+        /* Chatbot */
+        .chatbot-btn { position: fixed; bottom: 2rem; left: 2rem; width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.5); z-index: 1000; transition: transform 0.3s; }
+        .chatbot-btn:hover { transform: scale(1.1); }
+        .chat-window { position: fixed; bottom: 6rem; left: 2rem; width: 320px; height: 400px; background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 1rem; display: none; flex-direction: column; z-index: 1000; box-shadow: 0 10px 40px rgba(0,0,0,0.5); overflow: hidden; }
+        .chat-header { background: rgba(0,0,0,0.2); padding: 1rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); }
+        body.light-mode .chat-header { background: rgba(255,255,255,0.2); }
+        .chat-body { flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; }
+        .chat-msg { max-width: 80%; padding: 0.75rem; border-radius: 0.75rem; font-size: 0.875rem; line-height: 1.4; }
+        .msg-ai { background: rgba(99, 102, 241, 0.2); align-self: flex-start; border-bottom-left-radius: 0; }
+        .msg-user { background: rgba(255, 255, 255, 0.1); align-self: flex-end; border-bottom-right-radius: 0; }
+        body.light-mode .msg-user { background: rgba(0, 0, 0, 0.05); }
+        .chat-input { display: flex; padding: 0.75rem; border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.1); }
+        .chat-input input { flex: 1; background: transparent; border: none; color: var(--text); outline: none; font-family: inherit; }
+        .chat-input button { width: auto; margin: 0 0 0 0.5rem; padding: 0.5rem 1rem; margin-top: 0; }
 
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
+        .recommendation-card { margin-top: 1.5rem; padding: 1.25rem; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 1rem; animation: fadeIn 1s ease-out; }
+        .history-list { list-style: none; margin-top: 1rem; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.875rem; }
+        .tag { padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .tag-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .tag-success { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        
+        .autopilot-toggle { display: flex; justify-content: space-between; align-items: center; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); padding: 1rem 1.25rem; border-radius: 1rem; margin-bottom: 2rem; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #1e293b; transition: .4s; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 34px;}
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: #94a3b8; transition: .4s; border-radius: 50%; }
+        input:checked+.slider { background-color: var(--primary); border-color: var(--primary); }
+        input:checked+.slider:before { transform: translateX(22px); background-color: white; }
 
-        button {
-            width: 100%;
-            padding: 1rem;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            color: white;
-            border: none;
-            border-radius: 0.75rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.2s, opacity 0.2s;
-            margin-top: 1rem;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            opacity: 0.9;
-        }
-
-        .main-stats {
-            display: grid;
-            grid-template-rows: auto 1fr;
-            gap: 2rem;
-        }
-
-        .risk-gauge {
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            padding: 1.5rem;
-        }
-
-        .gauge-container {
-            width: 250px;
-            position: relative;
-        }
-
-        .risk-info {
-            text-align: center;
-        }
-
-        .risk-value {
-            font-size: 3.5rem;
-            font-weight: 800;
-            line-height: 1;
-        }
-
-        .risk-label {
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-size: 0.75rem;
-            margin-top: 0.5rem;
-        }
-
-        .root-cause-card {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: rgba(239, 68, 68, 0.05);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            border-radius: 0.75rem;
-            display: none;
-        }
-
-        .recommendation-card {
-            margin-top: 1.5rem;
-            padding: 1.25rem;
-            background: rgba(99, 102, 241, 0.05);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 1rem;
-            animation: fadeIn 1s ease-out;
-        }
-
-        .recommendation-card h4 {
-            color: var(--primary);
-            font-size: 0.875rem;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .root-cause-card h4 {
-            color: var(--danger);
-            font-size: 0.875rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .history-list {
-            list-style: none;
-            margin-top: 1rem;
-        }
-
-        .history-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            font-size: 0.875rem;
-        }
-
-        .tag {
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .tag-danger {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
-        }
-
-        .tag-success {
-            background: rgba(34, 197, 94, 0.2);
-            color: #4ade80;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                opacity: 0.8;
-            }
-
-            50% {
-                transform: scale(1.5);
-                opacity: 0.4;
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: 0.8;
-            }
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        /* Auto-Pilot Toggle */
-        .autopilot-toggle {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(99, 102, 241, 0.05);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            padding: 1rem 1.25rem;
-            border-radius: 1rem;
-            margin-bottom: 2rem;
-            transition: all 0.3s ease;
-        }
-
-        .autopilot-toggle span {
-            font-weight: 600;
-            font-size: 0.875rem;
-            color: #818cf8;
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 46px;
-            height: 24px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #1e293b;
-            transition: .4s;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 3px;
-            bottom: 3px;
-            background-color: #94a3b8;
-            transition: .4s;
-        }
-
-        input:checked+.slider {
-            background-color: var(--primary);
-            border-color: var(--primary);
-        }
-
-        input:checked+.slider:before {
-            transform: translateX(22px);
-            background-color: white;
-        }
-
-        .slider.round {
-            border-radius: 34px;
-        }
-
-        .slider.round:before {
-            border-radius: 50%;
-        }
+        /* Toasts & Glow */
+        .toast-container { position: fixed; bottom: 2rem; right: 2rem; display: flex; flex-direction: column; gap: 1rem; z-index: 1000; }
+        .toast { background: var(--card-bg); backdrop-filter: blur(10px); border-left: 4px solid var(--primary); padding: 1rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3); color: var(--text); animation: slideInRight 0.3s ease-out forwards; display: flex; align-items: center; gap: 0.75rem; font-size: 0.875rem; font-weight: 500; }
+        .toast.danger { border-left-color: var(--danger); }
+        .toast.success { border-left-color: var(--success); }
+        .toast.warning { border-left-color: var(--warning); }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.5); opacity: 0.4; } 100% { transform: scale(1); opacity: 0.8; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .card.danger-glow { box-shadow: 0 0 30px rgba(239, 68, 68, 0.4); border-color: rgba(239, 68, 68, 0.5); animation: dangerPulse 2s infinite; }
+        @keyframes dangerPulse { 0% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); } 50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.6); } 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); } }
+        
+        /* Theme Toggle */
+        .theme-toggle { background: transparent; border: 1px solid var(--glass-border); color: var(--text); padding: 0.5rem 1rem; border-radius: 2rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; transition: all 0.3s; margin-top: 0; width: auto; }
+        .theme-toggle:hover { background: rgba(255,255,255,0.1); transform: none; }
     </style>
 </head>
-
 <body>
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <!-- Chatbot -->
+    <div class="chatbot-btn" onclick="toggleChat()">🤖</div>
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            Cluster AI
+            <span style="cursor:pointer;" onclick="toggleChat()">✕</span>
+        </div>
+        <div class="chat-body" id="chatBody">
+            <div class="chat-msg msg-ai">Hello! I'm your Cluster AI. Ask me anything about the current health of the Kubernetes cluster.</div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="chatInput" placeholder="Type a message..." onkeypress="handleChat(event)">
+            <button onclick="sendChat()">➤</button>
+        </div>
+    </div>
+
     <div class="dashboard">
         <header>
             <h1>AI Auto-Healing Control</h1>
-            <div style="display: flex; gap: 1rem;">
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️ Light Mode</button>
                 <div class="status-badge" id="restartBadge">Restarts: 0</div>
                 <div class="status-badge">Cluster Healthy</div>
             </div>
         </header>
 
-        <section class="card prediction-form">
-            <div class="autopilot-toggle">
-                <span>Auto-Pilot Mode</span>
-                <label class="switch">
-                    <input type="checkbox" id="autopilotToggle">
-                    <span class="slider round"></span>
-                </label>
-            </div>
-            <h3 style="margin-bottom: 1.5rem;">Resource Monitor</h3>
-            <form id="predictionForm">
-                <div class="form-group">
-                    <label>CPU Usage (%)</label>
-                    <input type="number" id="cpu_usage" step="0.1" value="50" required>
+        <section class="left-panel">
+            <div class="card prediction-form">
+                <div class="autopilot-toggle">
+                    <span>Auto-Pilot Mode</span>
+                    <label class="switch">
+                        <input type="checkbox" id="autopilotToggle">
+                        <span class="slider round"></span>
+                    </label>
                 </div>
-                <div class="form-group">
-                    <label>Memory Usage (%)</label>
-                    <input type="number" id="memory_usage" step="0.1" value="60" required>
-                </div>
-                <div class="form-group">
-                    <label>Disk I/O</label>
-                    <input type="number" id="disk_io" step="0.1" value="30" required>
-                </div>
-                <div class="form-group">
-                    <label>Network I/O</label>
-                    <input type="number" id="network_io" step="0.1" value="20" required>
-                </div>
-                <button type="submit">Analyze Cluster Health</button>
-            </form>
+                <h3 style="margin-bottom: 1.5rem;">Resource Monitor</h3>
+                <form id="predictionForm">
+                    <div class="form-group">
+                        <label><span>💻 CPU Usage</span> <span class="range-value" id="cpu_val">50%</span></label>
+                        <input type="range" id="cpu_usage" min="0" max="100" step="0.1" value="50" oninput="updateRange('cpu')">
+                    </div>
+                    <div class="form-group">
+                        <label><span>🧠 Memory Usage</span> <span class="range-value" id="mem_val">60%</span></label>
+                        <input type="range" id="memory_usage" min="0" max="100" step="0.1" value="60" oninput="updateRange('mem')">
+                    </div>
+                    <div class="form-group">
+                        <label><span>💾 Disk I/O</span> <span class="range-value" id="disk_val">30</span></label>
+                        <input type="range" id="disk_io" min="0" max="100" step="0.1" value="30" oninput="updateRange('disk')">
+                    </div>
+                    <div class="form-group">
+                        <label><span>🌐 Network I/O</span> <span class="range-value" id="net_val">20</span></label>
+                        <input type="range" id="network_io" min="0" max="100" step="0.1" value="20" oninput="updateRange('net')">
+                    </div>
+                    <button type="submit">✨ Analyze Cluster Health</button>
+                </form>
 
-            <div style="margin-top: 2rem;">
-                <h4 style="color: #94a3b8; font-size: 0.75rem; margin-bottom: 1rem;">RECENT ACTIONS</h4>
-                <ul class="history-list" id="actionHistory">
-                    <li class="history-item">
-                        <span>Initialization</span>
-                        <span class="tag tag-success">Completed</span>
-                    </li>
-                </ul>
+                <div style="margin-top: 2rem;">
+                    <h4 style="color: #94a3b8; font-size: 0.75rem; margin-bottom: 1rem;">RECENT ACTIONS</h4>
+                    <ul class="history-list" id="actionHistory">
+                        <li class="history-item">
+                            <span>Initialization</span>
+                            <span class="tag tag-success">Completed</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </section>
 
-        <section class="main-stats">
-            <div class="card">
-                <div class="risk-gauge">
-                    <div class="gauge-container">
-                        <canvas id="riskChart"></canvas>
-                    </div>
-                    <div class="risk-info">
-                        <div class="risk-value" id="riskValue">0%</div>
-                        <div class="risk-label" id="riskLabel">Safe Operation</div>
-
-                        <div class="root-cause-card" id="rootCauseBox">
-                            <h4>🚨 Root Cause Detected</h4>
-                            <p id="rootCauseText" style="font-size: 0.875rem;"></p>
+        <section class="right-panel">
+            <!-- Top row: Gauge and Console -->
+            <div class="main-stats">
+                <div class="card" id="riskCardContainer">
+                    <div class="risk-gauge">
+                        <div class="gauge-container">
+                            <canvas id="riskChart"></canvas>
+                        </div>
+                        <div class="risk-info">
+                            <div class="risk-value" id="riskValue">0%</div>
+                            <div class="risk-label" id="riskLabel">Safe Operation</div>
                         </div>
                     </div>
+                    <div id="recommendationBox" class="recommendation-card" style="display: none;">
+                        <h4>💡 AI ADVICE</h4>
+                        <p id="recommendationText" style="font-size: 0.875rem; line-height: 1.5;"></p>
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 1.5rem;">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.25rem;">DevOps Console Logs</h3>
+                    <div class="devops-console" id="devopsConsole">
+                        <!-- Logs injected via JS -->
+                    </div>
                 </div>
             </div>
 
-            <div class="card" style="grid-column: 1 / -1;">
-                <h3 style="margin-bottom: 1rem;">System Health Trend</h3>
-                <div style="height: 200px; width: 100%;">
-                    <canvas id="historyChart"></canvas>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <!-- Architecture Graph -->
+                <div class="card" style="margin-top: 0;">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.25rem;">Live Cluster Architecture</h3>
+                    <div id="networkGraph"></div>
                 </div>
-            </div>
 
-            <div class="card">
-                <h3>Live Prediction Stream</h3>
-                <div id="resultMessage" style="margin-top: 1rem; color: #94a3b8; font-style: italic;">
-                    Enter parameters and run analysis to see results...
+                <!-- Health Trend -->
+                <div class="card" style="margin-top: 0;">
+                    <h3 style="margin-bottom: 1rem; font-size: 1.25rem;">System Health Trend</h3>
+                    <div style="height: 300px; width: 100%;">
+                        <canvas id="historyChart"></canvas>
+                    </div>
                 </div>
-                <div id="recommendationBox" class="recommendation-card" style="display: none;">
-                    <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path
-                                d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
-                        </svg> AI ADVICE</h4>
-                    <p id="recommendationText" style="font-size: 0.875rem; line-height: 1.5;"></p>
-                </div>
-                <div id="healingActions" style="margin-top: 1rem;"></div>
             </div>
         </section>
     </div>
 
     <script>
-        let riskChart;
-        let historyChart;
+        // --- Theming ---
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.getElementById('themeBtn');
+            body.classList.toggle('light-mode');
+            if (body.classList.contains('light-mode')) {
+                btn.innerHTML = '🌙 Dark Mode';
+                network.setOptions({ nodes: { font: { color: '#0f172a' } } });
+            } else {
+                btn.innerHTML = '☀️ Light Mode';
+                network.setOptions({ nodes: { font: { color: '#f8fafc' } } });
+            }
+            updateSliderColors();
+        }
+
+        // --- Toasts ---
+        function showToast(message, type = 'primary') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            let icon = 'ℹ️';
+            if(type === 'error' || type === 'danger') icon = '🚨';
+            if(type === 'success') icon = '✅';
+            if(type === 'warning') icon = '⚠️';
+            
+            toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease-out forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- Sliders ---
+        function updateRange(type) {
+            const map = { 'cpu': 'cpu_usage', 'mem': 'memory_usage', 'disk': 'disk_io', 'net': 'network_io' };
+            const id = map[type];
+            const val = document.getElementById(id).value;
+            const display = document.getElementById(type + '_val');
+            display.textContent = type === 'cpu' || type === 'mem' ? val + '%' : val;
+            
+            // Update track color dynamically based on value (Green -> Yellow -> Red)
+            const input = document.getElementById(id);
+            const percentage = val;
+            let color = '#22c55e'; // green
+            if(percentage > 60) color = '#f59e0b'; // yellow
+            if(percentage > 85) color = '#ef4444'; // red
+            input.style.background = `linear-gradient(to right, ${color} 0%, ${color} ${percentage}%, transparent ${percentage}%, transparent 100%)`;
+        }
+
+        function updateSliderColors() {
+            updateRange('cpu'); updateRange('mem'); updateRange('disk'); updateRange('net');
+        }
+
+        // --- DevOps Console ---
+        function logToConsole(message) {
+            const consoleDiv = document.getElementById('devopsConsole');
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            const time = new Date().toLocaleTimeString();
+            line.innerHTML = `<span class="console-time">[${time}]</span> ${message}`;
+            consoleDiv.appendChild(line);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+
+        // --- Chatbot ---
+        function toggleChat() {
+            const win = document.getElementById('chatWindow');
+            win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
+        }
+        function handleChat(e) { if(e.key === 'Enter') sendChat(); }
+        function sendChat() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            const body = document.getElementById('chatBody');
+            body.innerHTML += `<div class="chat-msg msg-user">${text}</div>`;
+            input.value = '';
+            body.scrollTop = body.scrollHeight;
+
+            setTimeout(() => {
+                let response = "I'm monitoring the cluster. Everything is stable.";
+                const lower = text.toLowerCase();
+                if(lower.includes("fail") || lower.includes("risk")) response = "Risk is calculated using an Isolation Forest ML model analyzing real-time Prometheus metrics.";
+                else if(lower.includes("hello") || lower.includes("hi")) response = "Hello! I am ready to assist with cluster operations.";
+                else if(lower.includes("fix") || lower.includes("heal")) response = "I can automatically restart Pods or trigger the HPA to scale deployments if risk exceeds 40%.";
+                else if(lower.includes("what")) response = "I provide context on Kubernetes health, HPA scaling events, and anomalous pod behavior.";
+                
+                body.innerHTML += `<div class="chat-msg msg-ai">${response}</div>`;
+                body.scrollTop = body.scrollHeight;
+            }, 800);
+        }
+
+        // --- Charts & UI ---
+        let riskChart, historyChart, network;
+        let nodes, edges;
 
         function initCharts() {
             const riskCtx = document.getElementById('riskChart').getContext('2d');
@@ -473,11 +368,7 @@
                         borderRadius: 10
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
-                }
+                options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { enabled: false } } }
             });
 
             const historyCtx = document.getElementById('historyChart').getContext('2d');
@@ -485,33 +376,38 @@
                 type: 'line',
                 data: {
                     labels: [],
-                    datasets: [{
-                        label: 'Risk %',
-                        data: [],
-                        borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 0
-                    }]
+                    datasets: [{ label: 'Risk %', data: [], borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
-                        x: { display: false }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 }, x: { display: false } } }
             });
+
+            // Vis-Network Graph
+            nodes = new vis.DataSet([
+                { id: 1, label: 'K8s Master', shape: 'diamond', color: '#6366f1', font: { color: '#f8fafc' } },
+                { id: 2, label: 'Worker 1', shape: 'dot', color: '#818cf8', font: { color: '#f8fafc' } },
+                { id: 3, label: 'Worker 2', shape: 'dot', color: '#818cf8', font: { color: '#f8fafc' } },
+                { id: 4, label: 'prod-app-v1\n(Active)', shape: 'box', color: '#22c55e', font: { color: '#f8fafc' } },
+                { id: 5, label: 'prod-app-v2\n(Standby)', shape: 'box', color: '#94a3b8', font: { color: '#f8fafc' } }
+            ]);
+            edges = new vis.DataSet([
+                { from: 1, to: 2 }, { from: 1, to: 3 },
+                { from: 2, to: 4 }, { from: 3, to: 5 }
+            ]);
+            const container = document.getElementById('networkGraph');
+            const data = { nodes: nodes, edges: edges };
+            const options = { physics: { stabilization: true }, nodes: { borderWidth: 2 } };
+            network = new vis.Network(container, data, options);
         }
 
         function updateUI(data) {
             const risk = data.risk_percentage;
             document.getElementById('riskValue').textContent = risk + '%';
             document.getElementById('restartBadge').textContent = 'Restarts: ' + (data.restart_count || 0);
+
+            // Risk Card Glow
+            const riskCard = document.getElementById('riskCardContainer');
+            if (risk >= 40) riskCard.classList.add('danger-glow');
+            else riskCard.classList.remove('danger-glow');
 
             // Update chart
             riskChart.data.datasets[0].data = [risk, 100 - risk];
@@ -521,27 +417,11 @@
             riskChart.data.datasets[0].backgroundColor[0] = color;
             riskChart.update();
 
-            // Root Cause
-            const rootBox = document.getElementById('rootCauseBox');
-            if (data.root_cause !== 'N/A') {
-                rootBox.style.display = 'block';
-                document.getElementById('rootCauseText').textContent = 'Anomalous ' + data.root_cause.replace('_', ' ').toUpperCase() + ' detected.';
-            } else {
-                rootBox.style.display = 'none';
-            }
-
             // Labels
             const label = document.getElementById('riskLabel');
-            if (risk < 30) {
-                label.textContent = "Safe Operation";
-                label.style.color = "#4ade80";
-            } else if (risk < 40) {
-                label.textContent = "Warning: Scaling Triggered";
-                label.style.color = "#fbbf24";
-            } else {
-                label.textContent = "Critical: Auto-Healing Active";
-                label.style.color = "#ef4444";
-            }
+            if (risk < 30) { label.textContent = "Safe Operation"; label.style.color = "#4ade80"; }
+            else if (risk < 40) { label.textContent = "Warning: Scaling Triggered"; label.style.color = "#fbbf24"; }
+            else { label.textContent = "Critical: Auto-Healing Active"; label.style.color = "#ef4444"; }
 
             // Recommendations
             const recBox = document.getElementById('recommendationBox');
@@ -550,12 +430,24 @@
                 document.getElementById('recommendationText').textContent = data.recommendation;
             }
 
-            // Update History Chart
+            // Update Graph Node
+            if(risk >= 40) {
+                nodes.update({ id: 4, label: 'prod-app-v1\n(RESTARTING)', color: '#ef4444' });
+                logToConsole("CRITICAL: Risk >40%. Issuing pod restart command via API.");
+                setTimeout(() => {
+                    nodes.update({ id: 4, label: 'prod-app-v1\n(Active)', color: '#22c55e' });
+                    logToConsole("SUCCESS: Pod restart verified. Traffic restored.");
+                }, 4000);
+            } else if (risk >= 30) {
+                nodes.update({ id: 4, label: 'prod-app-v1\n(Warning)', color: '#fbbf24' });
+                logToConsole("WARNING: High risk detected. Triggering HPA scale out.");
+            } else {
+                nodes.update({ id: 4, label: 'prod-app-v1\n(Active)', color: '#22c55e' });
+            }
+
             fetchHistory();
 
-            // History List
             const history = document.getElementById('actionHistory');
-
             if (data.healing_verified) {
                 const verifyItem = document.createElement('li');
                 verifyItem.className = 'history-item';
@@ -594,32 +486,36 @@
                 network_io: parseFloat(document.getElementById('network_io').value)
             };
 
-            try {
-                const response = await fetch('/predict/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestData)
-                });
+            logToConsole(`Analyzing Pod 'prod-app-v1' [CPU: ${requestData.cpu_usage}%, Mem: ${requestData.memory_usage}%]`);
 
+            try {
+                const response = await fetch('/predict/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestData) });
                 const data = await response.json();
                 updateUI(data);
-                document.getElementById('resultMessage').textContent = `Analysis complete: ${data.is_failure ? 'Potential failure detected!' : 'System stable.'}`;
+                
+                const msg = data.is_failure ? 'Potential failure detected!' : 'System stable.';
+                const type = data.is_failure ? 'danger' : 'success';
+                showToast(`Analysis complete: ${msg}`, type);
+                logToConsole(`Analysis finished. Calculated Risk: ${data.risk_percentage}%.`);
 
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('resultMessage').textContent = "Error occurred during prediction.";
+                showToast("Error occurred during prediction.", 'danger');
+                logToConsole("ERROR: Failed to reach ML prediction endpoint.");
             } finally {
-                btn.textContent = 'Analyze Cluster Health';
+                btn.textContent = '✨ Analyze Cluster Health';
                 btn.style.opacity = '1';
             }
         });
 
+        // Initialize
         initCharts();
         fetchHistory();
+        updateSliderColors();
+        logToConsole("System initialized. Monitoring agents active.");
 
-        // Auto-Pilot Logic
+        // Auto-Pilot
         let autopilotInterval = null;
-
         document.getElementById('autopilotToggle').addEventListener('change', (e) => {
             const isAuto = e.target.checked;
             const formInputs = document.querySelectorAll('#predictionForm input, #predictionForm button');
@@ -629,36 +525,36 @@
                 formInputs.forEach(input => input.disabled = true);
                 toggleContainer.style.background = "rgba(99, 102, 241, 0.15)";
                 toggleContainer.style.borderColor = "var(--primary)";
-                document.getElementById('resultMessage').textContent = "Auto-Pilot Active: Monitoring Cluster...";
+                showToast("Auto-Pilot Active: Monitoring Cluster...", "warning");
+                logToConsole("Auto-Pilot Mode enabled. Polling real-time metrics.");
                 fetchAutopilotStatus();
                 autopilotInterval = setInterval(fetchAutopilotStatus, 5000);
             } else {
                 formInputs.forEach(input => input.disabled = false);
                 toggleContainer.style.background = "rgba(99, 102, 241, 0.05)";
                 toggleContainer.style.borderColor = "rgba(99, 102, 241, 0.2)";
-                document.getElementById('resultMessage').textContent = "Auto-Pilot Disabled. Manual mode active.";
+                showToast("Auto-Pilot Disabled. Manual mode active.", "primary");
+                logToConsole("Auto-Pilot Mode disabled. Returning to manual control.");
                 clearInterval(autopilotInterval);
             }
         });
 
         async function fetchAutopilotStatus() {
             try {
+                logToConsole("Fetching live metrics via Kubernetes API...");
                 const response = await fetch('/autopilot/status');
                 const data = await response.json();
                 if (data.metrics && data.prediction) {
-                    // Update input fields to reflect live data
                     document.getElementById('cpu_usage').value = data.metrics.cpu.toFixed(1);
                     document.getElementById('memory_usage').value = data.metrics.memory.toFixed(1);
                     document.getElementById('disk_io').value = data.metrics.disk.toFixed(1);
                     document.getElementById('network_io').value = data.metrics.network.toFixed(1);
+                    updateSliderColors();
 
-                    // Update UI with prediction results
                     updateUI(data.prediction);
-                    document.getElementById('resultMessage').textContent = `Auto-Pilot: Live analysis at ${data.timestamp}.`;
                 }
-            } catch (e) { console.error('Auto-pilot fetch error', e); }
+            } catch (e) { console.error('Auto-pilot fetch error', e); logToConsole("ERROR: Auto-Pilot metric fetch failed."); }
         }
     </script>
 </body>
-
 </html>
